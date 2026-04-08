@@ -1,0 +1,162 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// 用户模型
+model User {
+  id          String   @id @default(uuid())
+  phone       String   @unique
+  password    String
+  nickname    String   @default("用户")
+  avatar      String?
+  role        UserRole @default(USER)
+  creditScore Int      @default(100)
+  verified    Boolean  @default(false)
+  realName    String?
+  idCard      String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // 关联
+  publishedOrders Order[] @relation("OrderPublisher")
+  courierOrders   Order[] @relation("OrderCourier")
+  messages        Message[]
+  transactions    Transaction[]
+
+  @@index([phone])
+  @@index([role])
+}
+
+enum UserRole {
+  USER
+  COURIER
+  BOTH
+}
+
+// 订单模型
+model Order {
+  id                String        @id @default(uuid())
+  publisherId       String
+  courierId         String?
+  pickupAddress     String
+  deliveryAddress   String
+  pickupLat         Float
+  pickupLng         Float
+  deliveryLat       Float
+  deliveryLng       Float
+  description       String
+  images            String[]
+  price             Float
+  status            OrderStatus   @default(PENDING)
+  weight            Float?
+  note              String?
+  acceptedAt        DateTime?
+  pickedUpAt        DateTime?
+  deliveredAt       DateTime?
+  completedAt       DateTime?
+  cancelledAt       DateTime?
+  cancelReason      String?
+  rating            Int?
+  review            String?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  // 关联
+  publisher User @relation("OrderPublisher", fields: [publisherId], references: [id])
+  courier   User? @relation("OrderCourier", fields: [courierId], references: [id])
+  messages  Message[]
+  transaction Transaction?
+
+  @@index([publisherId])
+  @@index([courierId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+enum OrderStatus {
+  PENDING
+  ACCEPTED
+  PICKING_UP
+  DELIVERING
+  COMPLETED
+  CANCELLED
+}
+
+// 消息模型
+model Message {
+  id        String      @id @default(uuid())
+  orderId   String
+  senderId  String
+  content   String
+  type      MessageType @default(TEXT)
+  imageUrl  String?
+  createdAt DateTime    @default(now())
+
+  // 关联
+  order  Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  sender User  @relation(fields: [senderId], references: [id])
+
+  @@index([orderId])
+  @@index([createdAt])
+}
+
+enum MessageType {
+  TEXT
+  IMAGE
+  SYSTEM
+}
+
+// 交易模型
+model Transaction {
+  id        String          @id @default(uuid())
+  orderId   String          @unique
+  amount    Float
+  type      TransactionType
+  status    TransactionStatus @default(PENDING)
+  paymentMethod String?
+  transactionId String?     // 第三方支付 ID
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  // 关联
+  order Order @relation(fields: [orderId], references: [id])
+  user  User  @relation(fields: [userId], references: [id])
+  userId String
+
+  @@index([userId])
+  @@index([status])
+}
+
+enum TransactionType {
+  PAYMENT
+  REFUND
+  WITHDRAWAL
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+// 验证码模型
+model VerificationCode {
+  id        String   @id @default(uuid())
+  phone     String
+  code      String
+  type      String
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([phone])
+  @@index([expiresAt])
+}
