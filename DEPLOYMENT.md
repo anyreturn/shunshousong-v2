@@ -41,7 +41,7 @@ services:
       - "6379:6379"
 
   backend:
-    build: ./backend
+    build: ./shunshousong-v2/backend
     environment:
       DATABASE_URL: postgresql://postgres:${DB_PASSWORD}@db:5432/shunshousong
       JWT_SECRET: ${JWT_SECRET}
@@ -65,7 +65,7 @@ docker-compose up -d
 
 ```bash
 # 安装依赖
-cd backend
+cd shunshousong-v2/backend
 npm install --production
 
 # 构建 Prisma Client
@@ -118,7 +118,7 @@ OSS_REGION="oss-cn-hangzhou"
 ### 1. 构建 Android APK
 
 ```bash
-cd mobile
+cd shunshousong-v2/mobile
 
 # 安装 EAS CLI
 npm install -g eas-cli

@@ -41,7 +41,7 @@
 ## 📁 项目文件统计
 
 ```
-shunshousong/
+shunshousong-v2/
 ├── specs/           # 4 个文件
 ├── backend/         # 20+ 个源文件
 │   ├── auth/        # 认证模块
@@ -61,7 +61,7 @@ shunshousong/
 
 ### 后端
 ```bash
-cd shunshousong/backend
+cd shunshousong-v2/backend
 
 # 启动数据库
 docker run -d --name shunshousong-db \
@@ -82,7 +82,7 @@ npm run start:dev
 
 ### 移动端
 ```bash
-cd shunshousong/mobile
+cd shunshousong-v2/mobile
 
 # 安装依赖
 npm install

@@ -1,6 +1,8 @@
-# 顺手送 - 同城互助配送平台
+# 顺手送 v2 - 同城互助配送平台
 
-一个基于 **Spec-Driven Development (SDD)** 方式开发的同城互助配送应用。
+🚀 基于 **Spec-Driven Development (SDD)** 方式开发的同城互助配送应用 v2 版本
+
+**在线文档**: https://github.com/yourusername/shunshousong-v2
 
 ## 项目概述
 
@@ -47,7 +49,7 @@
 ## 项目结构
 
 ```
-shunshousong/
+shunshousong-v2/
 ├── specs/                  # 规范文档 (Spec Kit)
 │   ├── spec.md             # 产品规范
 │   ├── plan.md             # 执行计划
@@ -77,7 +79,7 @@ shunshousong/
 ### 后端启动
 
 ```bash
-cd backend
+cd shunshousong-v2/backend
 
 # 安装依赖
 npm install
@@ -104,7 +106,7 @@ npm run start:dev
 ### 移动端启动
 
 ```bash
-cd mobile
+cd shunshousong-v2/mobile
 
 # 安装依赖
 npm install
