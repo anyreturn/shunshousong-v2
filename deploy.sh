@@ -1,41 +1,74 @@
 #!/bin/bash
-# 顺手送 v2 - GitHub 推送脚本
-# 使用方法：在本地电脑运行此脚本
-
 set -e
 
-REPO_URL="https://github.com/anyreturn/shunshousong-v2.git"
-TEMP_DIR="/tmp/shunshousong-v2-deploy"
+echo "🚀 开始部署 顺手送 v2..."
 
-echo "🚀 开始推送 顺手送 v2 到 GitHub..."
+# 1. 检查环境
+echo "📋 检查环境..."
+if ! command -v node &> /dev/null; then
+    echo "❌ Node.js 未安装"
+    exit 1
+fi
 
-# 1. 克隆仓库
-echo "📥 克隆仓库..."
-rm -rf $TEMP_DIR
-git clone $REPO_URL $TEMP_DIR
-cd $TEMP_DIR
+if ! command -v npm &> /dev/null; then
+    echo "❌ npm 未安装"
+    exit 1
+fi
 
-# 2. 下载源代码包
-echo "📦 下载源代码..."
-# 请从服务器下载 /tmp/source-code.tar.gz 到此目录
-# scp admin@your-server:/tmp/source-code.tar.gz /tmp/
+# 2. 安装后端依赖
+echo "📦 安装后端依赖..."
+cd backend
+npm ci --omit=dev
+npx prisma generate
+cd ..
 
-# 3. 解压
-echo "📂 解压源代码..."
-tar -xzf /tmp/source-code.tar.gz
+# 3. 创建环境变量
+echo "⚙️  创建环境变量..."
+cat > backend/.env <<EOF
+NODE_ENV=production
+DATABASE_URL="postgresql://shunshousong:ShunShou2026!@#@localhost:5432/shunshousong"
+JWT_SECRET="shunshousong-v2-jwt-secret-$(date +%s)"
+JWT_EXPIRATION="30d"
+PORT=3000
+REDIS_HOST="localhost"
+REDIS_PORT=6379
+EOF
 
-# 4. 提交并推送
-echo "📤 提交并推送..."
-git add -A
-git commit -m "feat: 顺手送 v2 - 同城互助配送平台
+# 4. 安装 PM2（如果没有）
+if ! command -v pm2 &> /dev/null; then
+    echo "📥 安装 PM2..."
+    npm install -g pm2
+fi
 
-- 后端：NestJS + PostgreSQL + Prisma + Socket.IO
-- 移动端：React Native (Expo) + Zustand
-- 功能：订单管理、实时聊天、支付钱包、推送通知、地图定位
-- 文档：产品规范、API 文档、部署指南
+# 5. 启动数据库（如果未运行）
+echo "🗄️  检查数据库..."
+if ! pg_isready -h localhost -p 5432 &> /dev/null; then
+    echo "⚠️  PostgreSQL 未运行，请手动启动"
+    echo "   sudo systemctl start postgresql"
+fi
 
-使用 Spec Kit 规范驱动开发方式构建"
-git push origin main
+# 6. 数据库迁移
+echo "🔄 执行数据库迁移..."
+cd backend
+npx prisma migrate deploy
+cd ..
 
-echo "✅ 推送完成！"
-echo "🌐 查看仓库：https://github.com/anyreturn/shunshousong-v2"
+# 7. 启动应用
+echo "🚀 启动应用..."
+pm2 delete shunshousong-backend 2>/dev/null || true
+pm2 start ecosystem.config.js --env production
+
+# 8. 保存 PM2 配置
+pm2 save
+
+# 9. 设置开机自启
+pm2 startup
+
+echo ""
+echo "✅ 部署完成！"
+echo ""
+echo "📊 查看状态：pm2 status"
+echo "📝 查看日志：pm2 logs shunshousong-backend"
+echo "🔄 重启应用：pm2 restart shunshousong-backend"
+echo "🌐 API 地址：http://localhost:3000"
+echo "📚 Swagger: http://localhost:3000/api"

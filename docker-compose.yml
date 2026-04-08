@@ -1,0 +1,83 @@
+version: '3.8'
+
+services:
+  # PostgreSQL 数据库
+  db:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: shunshousong
+      POSTGRES_PASSWORD: ShunShou2026!@#
+      POSTGRES_DB: shunshousong
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - shunshousong_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U shunshousong"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis 缓存
+  redis:
+    image: redis:7-alpine
+    restart: always
+    ports:
+      - "6379:6379"
+    networks:
+      - shunshousong_net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # 后端 API 服务
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: always
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://shunshousong:ShunShou2026!@#@db:5432/shunshousong
+      JWT_SECRET: shunshousong-v2-jwt-secret-2026-change-in-production
+      JWT_EXPIRATION: 30d
+      PORT: 3000
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    ports:
+      - "3000:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - shunshousong_net
+    command: sh -c "npx prisma migrate deploy && npm run start:prod"
+
+  # Nginx 反向代理
+  nginx:
+    image: nginx:alpine
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - backend
+    networks:
+      - shunshousong_net
+
+volumes:
+  postgres_data:
+
+networks:
+  shunshousong_net:
+    driver: bridge
